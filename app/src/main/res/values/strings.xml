@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">TestTask</string>
+    <string name="download_button">Скачать документ</string>
+    <string name="forward_button">Переход на следующую страницу</string>
+    <string name="price_edit_hint">Введите новую цену</string>
+    <string name="save_button">Сохранить изменения</string>
+    <string name="products">Товары</string>
+    <string name="editing_price">Изменение цены</string>
+</resources>
