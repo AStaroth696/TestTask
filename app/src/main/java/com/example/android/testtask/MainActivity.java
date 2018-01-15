@@ -2,6 +2,7 @@ package com.example.android.testtask;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -30,11 +31,14 @@ import javax.xml.parsers.ParserConfigurationException;
 public class MainActivity extends Activity {
     private String url = "http://ainsoft.pro/test/test.xml";
     private SQLiteDatabase db;
+    private Cursor cursor;
+    private ProductsDatabaseHelper productsDatabaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        productsDatabaseHelper = new ProductsDatabaseHelper(this);
     }
 
     /**
@@ -51,38 +55,42 @@ public class MainActivity extends Activity {
             URL url;
             HttpURLConnection urlConnection;
             InputStream inputStream;
-            byte[]buffer;
+            byte[] buffer;
             int bufferLength;
             FileOutputStream fos;
 
+            db = productsDatabaseHelper.getReadableDatabase();
+            cursor = db.query("PRODUCTS", null, null, null,
+                    null, null, null);
+            if (cursor.getCount() == 0){
             /**
              * Загрузка файла
              */
-            try{
-                url = new URL(params[0]);
-                urlConnection = (HttpURLConnection)url.openConnection();
-                fos = openFileOutput("products.xml", MODE_PRIVATE);
-                inputStream = urlConnection.getInputStream();
+                try {
+                    url = new URL(params[0]);
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    fos = openFileOutput("products.xml", MODE_PRIVATE);
+                    inputStream = urlConnection.getInputStream();
 
-                buffer = new byte[2048];
+                    buffer = new byte[2048];
 
-                while ((bufferLength = inputStream.read(buffer)) != -1){
-                    fos.write(buffer, 0, bufferLength);
+                    while ((bufferLength = inputStream.read(buffer)) != -1) {
+                        fos.write(buffer, 0, bufferLength);
+                    }
+                    fos.close();
+                    inputStream.close();
+
+                    /**
+                     * Вызов парсера
+                     */
+                    parseXmlToDatabase();
+                    return true;
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                fos.close();
-                inputStream.close();
-
-                /**
-                 * Вызов парсера
-                 */
-                parseXmlToDatabase();
-                return true;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
+        }
             return false;
         }
 
@@ -93,7 +101,7 @@ public class MainActivity extends Activity {
                 Toast.makeText(MainActivity.this, "Загрузка завершена",
                         Toast.LENGTH_SHORT).show();
             }else {
-                Toast.makeText(MainActivity.this, "Не удалось скачать файл",
+                Toast.makeText(MainActivity.this, "Не удалось скачать файл или файл уже скачан",
                         Toast.LENGTH_SHORT).show();
             }
         }
@@ -152,5 +160,12 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        cursor.close();
+        db.close();
     }
 }
